@@ -131,7 +131,16 @@ def plot_passnetwork(df, team=" "):
 
     # create pitch to plot
     pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
-    fig, ax = pitch.draw(figsize=(10, 6))
+    # fig, ax = pitch.draw(figsize=(10, 6))
+    # maybe change pitch.grid to pitch.draw as previous function
+    fig, ax = pitch.grid(
+        grid_height=0.9,
+        title_height=0.06,
+        axis=False,
+        endnote_height=0.04,
+        title_space=0,
+        endnote_space=0,
+    )
 
     # first iteration of code remove observations after first substitution
     # second iteration should plot the players subbed on with new color/alpha
@@ -154,3 +163,86 @@ def plot_passnetwork(df, team=" "):
     df_passnet[["end_pass_x", "end_pass_y"]] = pd.DataFrame(
         df_passnet.pass_end_location.tolist(), index=df_passnet.index
     )
+    # create temporary scatterf_df and lines_df to plot the vertices and edges
+    # TODO: make sure the method using enumerate is the best way to do this
+    scatter_df = pd.DataFrame()
+    for i, name in enumerate(df_passnet["player"].unique()):
+        passx = df_passnet.loc[df_passnet["player"] == name]["position_x"].to_numpy()
+        recx = df_passnet.loc[df_passnet["pass_recipient"] == name][
+            "end_pass_x"
+        ].to_numpy()
+        passy = df_passnet.loc[df_passnet["player"] == name]["position_y"].to_numpy()
+        recy = df_passnet.loc[df_passnet["pass_recipient"] == name][
+            "end_pass_y"
+        ].to_numpy()
+        scatter_df.at[i, "player"] = name
+        # make sure that x and y location for each circle representing the player is the average of passes and receptions
+        scatter_df.at[i, "x"] = np.mean(np.concatenate([passx, recx]))
+        scatter_df.at[i, "y"] = np.mean(np.concatenate([passy, recy]))
+        # calculate number of passes
+        scatter_df.at[i, "no"] = df_passnet.loc[df_passnet["player"] == name][
+            "type"
+        ].count()
+
+    # adjust the size of a circle so that the player who made more passes
+    scatter_df["marker_size"] = scatter_df["no"] / scatter_df["no"].max() * 1500
+
+    # counting passes between players
+    df_passnet["pair_key"] = df_passnet.apply(
+        lambda x: "_".join(sorted([x["player"], x["pass_recipient"]])), axis=1
+    )
+    lines_df = df_passnet.groupby(["pair_key"]).position_x.count().reset_index()
+    lines_df.rename({"position_x": "pass_count"}, axis="columns", inplace=True)
+    # setting a treshold. You can try to investigate how it changes when you change it.
+    lines_df = lines_df[lines_df["pass_count"] > 2]
+
+    # plot the average position of players
+    pitch.scatter(
+        scatter_df.x,
+        scatter_df.y,
+        s=scatter_df.marker_size,
+        color="#f99f84",
+        edgecolors="white",
+        linewidth=1,
+        alpha=1,
+        ax=ax["pitch"],
+        zorder=3,
+    )
+    for i, row in scatter_df.iterrows():
+        pitch.annotate(
+            row.player,
+            xy=(row.x, row.y),
+            c="white",
+            va="center",
+            ha="center",
+            weight="bold",
+            size=12,
+            ax=ax["pitch"],
+            zorder=4,
+        )
+
+    # plot the connections between players
+    # TODO: make sure the method using iterrows is the best way to do this
+    for i, row in lines_df.iterrows():
+        player1 = row["pair_key"].split("_")[0]
+        player2 = row["pair_key"].split("_")[1]
+        # take the average location of players to plot a line between them
+        player1_x = scatter_df.loc[scatter_df["player"] == player1]["x"].iloc[0]
+        player1_y = scatter_df.loc[scatter_df["player"] == player1]["y"].iloc[0]
+        player2_x = scatter_df.loc[scatter_df["player"] == player2]["x"].iloc[0]
+        player2_y = scatter_df.loc[scatter_df["player"] == player2]["y"].iloc[0]
+        num_passes = row["pass_count"]
+        # adjust the line width so that the more passes, the wider the line
+        line_width = num_passes / lines_df["pass_count"].max() * 10
+        # plot lines on the pitch
+        pitch.lines(
+            player1_x,
+            player1_y,
+            player2_x,
+            player2_y,
+            alpha=1,
+            lw=line_width,
+            zorder=2,
+            color="#f99f84",
+            ax=ax["pitch"],
+        )
