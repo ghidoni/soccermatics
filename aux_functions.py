@@ -1,10 +1,56 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mplsoccer.pitch import Pitch
 import pandas as pd
 import numpy as np
 
+background_color = "#1b1b1b"
+text_color = "white"
+mpl.rcParams["figure.facecolor"] = background_color
+mpl.rcParams["axes.facecolor"] = background_color
+team1_color = "#f99f84"
+team2_color = "#84def9"
 
-def plot_shots_df(df):
+
+def plot_shots_1team(df, team=""):
+    # test for valid inputs
+    if team == " ":
+        raise ValueError("Please enter team name")
+    # create pitch to plot
+    pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
+    fig, ax = pitch.draw(figsize=(8, 5))
+    # create df_shots
+    df_shots = df[(df["type"] == "Shot") & (df["team"] == team)].copy()
+    # unpack location variable
+    df_shots[["position_x", "position_y"]] = pd.DataFrame(
+        df_shots.location.tolist(), index=df_shots.index
+    )
+    # iterate over rows to plot shots
+
+    for i, shot in df_shots.iterrows():
+        x = shot["position_x"]
+        y = shot["position_y"]
+        goal = shot["shot_outcome"] == "Goal"
+        marker_size_xg = shot["shot_statsbomb_xg"]
+        marker_size = 2
+        if goal:
+            shot_circle = plt.Circle((x, y), marker_size, color="#f99f84")
+            plt.text(
+                x + 1,
+                y - 2,
+                shot["player"].split(" ")[-1],
+                fontsize=8,
+                color="white",
+            )
+        else:
+            shot_circle = plt.Circle((x, y), marker_size, color="#f99f84")
+            shot_circle.set_alpha(0.5)
+        xg_circle = plt.Circle((x, y), marker_size_xg, color="white")
+        ax.add_patch(shot_circle)
+        # ax.add_patch(xg_circle)
+
+
+def plot_shots_2teams(df):
     # create pitch to plot
     pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
     fig, ax = pitch.draw(figsize=(8, 5))
