@@ -1,6 +1,6 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from mplsoccer.pitch import Pitch
+from mplsoccer.pitch import Pitch, VerticalPitch
 import pandas as pd
 import numpy as np
 
@@ -8,8 +8,13 @@ background_color = "#1b1b1b"
 text_color = "white"
 mpl.rcParams["figure.facecolor"] = background_color
 mpl.rcParams["axes.facecolor"] = background_color
+# mpl.rcParams["font.family"] = "Alegreya Sans"
 team1_color = "#f99f84"
 team2_color = "#84def9"
+
+
+def reset_matplotlib():
+    mpl.rcParams.update(mpl.rcParamsDefault)
 
 
 def plot_shots_1team(df, team=""):
@@ -17,7 +22,9 @@ def plot_shots_1team(df, team=""):
     if team == " ":
         raise ValueError("Please enter team name")
     # create pitch to plot
-    pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
+    pitch = Pitch(
+        pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b", half=True
+    )
     fig, ax = pitch.draw(figsize=(8, 5))
     # create df_shots
     df_shots = df[(df["type"] == "Shot") & (df["team"] == team)].copy()
