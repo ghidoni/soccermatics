@@ -1,3 +1,5 @@
+"""This module contains auxiliary functions for soccermatics project."""
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mplsoccer.pitch import Pitch, VerticalPitch
@@ -14,16 +16,30 @@ team2_color = "#84def9"
 
 
 def reset_matplotlib():
+    """Reset the matplotlib rcParams to their default values."""
     mpl.rcParams.update(mpl.rcParamsDefault)
 
 
 def plot_shots_1team(df, team=""):
+    """
+    Plot the shots of a given team in a vertical pitch.
+
+    Args:
+    - df: pandas DataFrame containing the data to be plotted.
+    - team: string representing the name of the team to be plotted.
+
+    Returns:
+    - None
+    """
     # test for valid inputs
     if team == " ":
         raise ValueError("Please enter team name")
     # create pitch to plot
-    pitch = Pitch(
-        pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b", half=True
+    pitch = VerticalPitch(
+        pitch_type="statsbomb",
+        line_color="grey",
+        pitch_color="#1b1b1b",
+        half=True,
     )
     fig, ax = pitch.draw(figsize=(8, 5))
     # create df_shots
@@ -38,7 +54,7 @@ def plot_shots_1team(df, team=""):
         x = shot["position_x"]
         y = shot["position_y"]
         goal = shot["shot_outcome"] == "Goal"
-        marker_size_xg = shot["shot_statsbomb_xg"]
+        # marker_size_xg = shot["shot_statsbomb_xg"]
         marker_size = 2
         if goal:
             shot_circle = plt.Circle((x, y), marker_size, color="#f99f84")
@@ -52,15 +68,26 @@ def plot_shots_1team(df, team=""):
         else:
             shot_circle = plt.Circle((x, y), marker_size, color="#f99f84")
             shot_circle.set_alpha(0.5)
-        xg_circle = plt.Circle((x, y), marker_size_xg, color="white")
+        # xg_circle = plt.Circle((x, y), marker_size_xg, color="white")
         ax.add_patch(shot_circle)
         # ax.add_patch(xg_circle)
 
 
 def plot_shots_2teams(df):
+    """
+    Plot the shots of two teams in a pitch.
+
+    Args:
+    - df: pandas DataFrame containing the data to be plotted.
+
+    Returns:
+    - None
+    """
     # create pitch to plot
-    pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
-    fig, ax = pitch.draw(figsize=(8, 5))
+    pitch = Pitch(
+        pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b"
+    )
+    fig, ax = pitch.draw(figsize=(8, 5))  # type: ignore
     # get teams names
     team1, team2 = df["team"].unique()
     # create df_shots
@@ -77,7 +104,7 @@ def plot_shots_2teams(df):
         goal = shot["shot_outcome"] == "Goal"
         team_name = shot["team"]
         # TODO: find a elegant way to integrate xg into the shots plot
-        marker_size_xg = shot["shot_statsbomb_xg"]
+        # marker_size_xg = shot["shot_statsbomb_xg"]
         marker_size = 2
         if team_name == team1:
             if goal:
@@ -92,7 +119,7 @@ def plot_shots_2teams(df):
             else:
                 shot_circle = plt.Circle((x, y), marker_size, color="#f99f84")
                 shot_circle.set_alpha(0.5)
-            xg_circle = plt.Circle((x, y), marker_size_xg, color="white")
+            # xg_circle = plt.Circle((x, y), marker_size_xg, color="white")
         # TODO: define default numbers for pitch dimensions
         elif team_name == team2:
             if goal:
@@ -111,23 +138,41 @@ def plot_shots_2teams(df):
                     (120 - x, 80 - y), marker_size, color="#84def9"
                 )
                 shot_circle.set_alpha(0.5)
-            xg_circle = plt.Circle((120 - x, 80 - y), marker_size_xg, color="white")
+            # xg_circle = plt.Circle(
+            #     (120 - x, 80 - y), marker_size_xg, color="w"
+            # )
         ax.add_patch(shot_circle)
         # ax.add_patch(xg_circle)
 
 
 def plot_passes_arrow(df, team=" ", player=" "):
+    """
+    Plot arrows representing passes between players in a soccer match.
+
+    Args:
+    - df: pandas DataFrame containing the data to be plotted.
+    - team: string representing the name of the team to be plotted.
+    Default is an empty string.
+    - player: string representing the name of the player to be plotted.
+    Default is an empty string.
+
+    Returns:
+    - None
+    """
     # test for valid inputs
     if team == " " and player == " ":
         raise ValueError("Please enter either team or player name")
     elif team != " " and player != " ":
         raise ValueError("Please enter only team or player name")
     # create pitch to plot
-    pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
+    pitch = Pitch(
+        pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b"
+    )
     fig, ax = pitch.draw(figsize=(10, 6))
     # create df_pass
     df_pass = df[
-        (df["type"].isin(["Pass"])) & (df["pass_type"].isin([np.nan, "Goal Kick"]))
+        (df["type"].isin(["Pass"]))
+        & (df["pass_type"].isin([np.nan, "Goal Kick"]))
     ].copy()
     # unpack location variable
     df_pass[["position_x", "position_y"]] = pd.DataFrame(
@@ -173,17 +218,38 @@ def plot_passes_arrow(df, team=" ", player=" "):
     )
     # plot players positions
     pitch.scatter(
-        df_pass.position_x, df_pass.position_y, alpha=0.2, s=100, color="white", ax=ax
+        df_pass.position_x,
+        df_pass.position_y,
+        alpha=0.2,
+        s=100,
+        color="white",
+        ax=ax,
     )
 
 
 def plot_passnetwork(df, team=" "):
+    """
+    Plot a pass network for a given team, based on a DataFrame of events.
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame containing the events data.
+    team : str
+        Name of the team to plot the pass network for.
+
+    Returns:
+    --------
+    None
+    """
     # test for valid inputs
     if team == " ":
         raise ValueError("Please enter a team name")
 
     # create pitch to plot
-    pitch = Pitch(pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b")
+    pitch = Pitch(
+        pitch_type="statsbomb", line_color="grey", pitch_color="#1b1b1b"
+    )
     # fig, ax = pitch.draw(figsize=(10, 6))
     # maybe change pitch.grid to pitch.draw as previous function
     fig, ax = pitch.grid(
@@ -220,16 +286,21 @@ def plot_passnetwork(df, team=" "):
     # TODO: make sure the method using enumerate is the best way to do this
     scatter_df = pd.DataFrame()
     for i, name in enumerate(df_passnet["player"].unique()):
-        passx = df_passnet.loc[df_passnet["player"] == name]["position_x"].to_numpy()
+        passx = df_passnet.loc[df_passnet["player"] == name][
+            "position_x"
+        ].to_numpy()
         recx = df_passnet.loc[df_passnet["pass_recipient"] == name][
             "end_pass_x"
         ].to_numpy()
-        passy = df_passnet.loc[df_passnet["player"] == name]["position_y"].to_numpy()
+        passy = df_passnet.loc[df_passnet["player"] == name][
+            "position_y"
+        ].to_numpy()
         recy = df_passnet.loc[df_passnet["pass_recipient"] == name][
             "end_pass_y"
         ].to_numpy()
         scatter_df.at[i, "player"] = name
-        # make sure that x and y location for each circle representing the player is the average of passes and receptions
+        # make sure that x and y location for each circle representing the
+        # player is the average of passes and receptions
         scatter_df.at[i, "x"] = np.mean(np.concatenate([passx, recx]))
         scatter_df.at[i, "y"] = np.mean(np.concatenate([passy, recy]))
         # calculate number of passes
@@ -238,15 +309,19 @@ def plot_passnetwork(df, team=" "):
         ].count()
 
     # adjust the size of a circle so that the player who made more passes
-    scatter_df["marker_size"] = scatter_df["no"] / scatter_df["no"].max() * 1500
+    scatter_df["marker_size"] = (
+        scatter_df["no"] / scatter_df["no"].max() * 1500
+    )
 
     # counting passes between players
     df_passnet["pair_key"] = df_passnet.apply(
         lambda x: "_".join(sorted([x["player"], x["pass_recipient"]])), axis=1
     )
-    lines_df = df_passnet.groupby(["pair_key"]).position_x.count().reset_index()
+    lines_df = (
+        df_passnet.groupby(["pair_key"]).position_x.count().reset_index()
+    )
     lines_df.rename({"position_x": "pass_count"}, axis="columns", inplace=True)
-    # setting a treshold. You can try to investigate how it changes when you change it.
+    # setting a treshold. try to investigate how it changes when you change it.
     lines_df = lines_df[lines_df["pass_count"] > 2]
 
     # plot the average position of players
@@ -280,10 +355,18 @@ def plot_passnetwork(df, team=" "):
         player1 = row["pair_key"].split("_")[0]
         player2 = row["pair_key"].split("_")[1]
         # take the average location of players to plot a line between them
-        player1_x = scatter_df.loc[scatter_df["player"] == player1]["x"].iloc[0]
-        player1_y = scatter_df.loc[scatter_df["player"] == player1]["y"].iloc[0]
-        player2_x = scatter_df.loc[scatter_df["player"] == player2]["x"].iloc[0]
-        player2_y = scatter_df.loc[scatter_df["player"] == player2]["y"].iloc[0]
+        player1_x = scatter_df.loc[scatter_df["player"] == player1]["x"].iloc[
+            0
+        ]
+        player1_y = scatter_df.loc[scatter_df["player"] == player1]["y"].iloc[
+            0
+        ]
+        player2_x = scatter_df.loc[scatter_df["player"] == player2]["x"].iloc[
+            0
+        ]
+        player2_y = scatter_df.loc[scatter_df["player"] == player2]["y"].iloc[
+            0
+        ]
         num_passes = row["pass_count"]
         # adjust the line width so that the more passes, the wider the line
         line_width = num_passes / lines_df["pass_count"].max() * 10
